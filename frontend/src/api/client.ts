@@ -4,7 +4,9 @@ import type {
   MonthlyDailyBreakdownResponse,
 } from "./types"
 
-const API_BASE = import.meta.env.VITE_API_URL || ""
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? "https://grid-backend-xee3.onrender.com" : "")
 
 async function request<T>(endpoint: string): Promise<T> {
   const url = `${API_BASE}${endpoint}`

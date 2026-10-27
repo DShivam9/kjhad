@@ -23,3 +23,9 @@ Thumbs.db
 .vscode/
 .idea/
 *.log
+
+# Internal & Submission Preparation Notes
+DEMO_SCRIPT.md
+PROBLEMSTATEMENT.MD
+PROJECT_BLUEPRINT.md
+

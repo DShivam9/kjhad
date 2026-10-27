@@ -4,6 +4,11 @@ An institutional-grade decision support platform built for UK energy utility tra
 
 The platform ingests live, metered National Grid ESO / Elexon BMRS stream data to eliminate look-ahead bias, evaluate forecast accuracy across all 1,488 settlement periods, and size dispatchable thermal backup buffers to hedge against costly Balancing Mechanism cashout penalties.
 
+### 🌐 Live Deployment Links
+- **Backend API & Swagger Docs**: [https://grid-backend-xee3.onrender.com/docs](https://grid-backend-xee3.onrender.com/docs)
+- **API Health Check**: [https://grid-backend-xee3.onrender.com/api/health](https://grid-backend-xee3.onrender.com/api/health)
+- **Frontend Portal**: *(Deploying on Vercel)*
+
 ---
 
 ## 1. Executive Summary & Market Findings
