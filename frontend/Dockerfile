@@ -4,13 +4,13 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 # Copy dependency specifications
-COPY frontend/package*.json ./
+COPY package*.json ./
 
 # Install dependencies (using legacy peer deps for compatibility if needed)
 RUN npm ci || npm install --legacy-peer-deps
 
 # Copy frontend source files
-COPY frontend/ ./
+COPY . ./
 
 # Build production bundle
 RUN npm run build
@@ -22,8 +22,9 @@ FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 
 # Copy custom Nginx configuration for SPA routing and API proxy
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
+
