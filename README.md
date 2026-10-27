@@ -5,9 +5,10 @@ An institutional-grade decision support platform built for UK energy utility tra
 The platform ingests live, metered National Grid ESO / Elexon BMRS stream data to eliminate look-ahead bias, evaluate forecast accuracy across all 1,488 settlement periods, and size dispatchable thermal backup buffers to hedge against costly Balancing Mechanism cashout penalties.
 
 ### 🌐 Live Deployment Links
-- **Backend API & Swagger Docs**: [https://grid-backend-xee3.onrender.com/docs](https://grid-backend-xee3.onrender.com/docs)
+- **Frontend Portal (Live on Vercel)**: [https://frontend-woad-six-16.vercel.app/](https://frontend-woad-six-16.vercel.app/)
+- **Backend API & Swagger Docs (Live on Render)**: [https://grid-backend-xee3.onrender.com/docs](https://grid-backend-xee3.onrender.com/docs)
 - **API Health Check**: [https://grid-backend-xee3.onrender.com/api/health](https://grid-backend-xee3.onrender.com/api/health)
-- **Frontend Portal**: *(Deploying on Vercel)*
+
 
 ---
 
@@ -195,22 +196,15 @@ For settlement periods $i = 1, \dots, N$:
 ---
 
 ## 6. Deployment Guide
+ 
+- **Frontend Portal (Vercel)**: [https://frontend-woad-six-16.vercel.app/](https://frontend-woad-six-16.vercel.app/)
+  - Deployed from `frontend/` directory with Vite preset.
+  - Automatically proxies API requests to Render via `VITE_API_URL` environment variable.
 
-### Frontend Deployment (Vercel)
-1. Push this repository to GitHub.
-2. In the Vercel dashboard, click **Add New Project** and select the repository.
-3. Set **Root Directory** to `frontend`.
-4. Add environment variable:
-   - `VITE_API_URL`: URL of your deployed backend (e.g. `https://grid-backend.onrender.com`).
-5. Deploy. The `vercel.json` ensures all client routes resolve correctly.
+- **Backend API (Render)**: [https://grid-backend-xee3.onrender.com](https://grid-backend-xee3.onrender.com)
+  - Deployed from `backend/` using Docker container with automatic health monitoring.
+  - Interactive Swagger Docs: [https://grid-backend-xee3.onrender.com/docs](https://grid-backend-xee3.onrender.com/docs)
 
-### Backend Deployment (Render / Heroku)
-1. Connect the repository to Render or Heroku.
-2. Root directory: `backend` or use the provided `Procfile`:
-   ```
-   web: uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}
-   ```
-3. Set Python version to `3.11.8` via `runtime.txt`.
 
 ---
 
