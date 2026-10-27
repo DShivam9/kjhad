@@ -1,165 +1,155 @@
-# UK Day-Ahead Wind Generation Decision Platform & Forecast Evaluation Desk
+# UK Wind Power Trading & Day-Ahead Forecast Evaluation Desk
 
-An institutional-grade decision support platform built for UK energy utility trading desks buying wholesale electricity in the Day-Ahead Market (EPEX SPOT / Nord Pool) for **January 2026**.
+A decision-support platform designed for UK power traders and energy analysts. It evaluates day-ahead wind forecasts against actual metered grid generation across all 1,488 half-hour settlement periods of **January 2026**, helping trading desks size backup thermal generation and avoid costly grid penalties.
 
-The platform ingests live, metered National Grid ESO / Elexon BMRS stream data to eliminate look-ahead bias, evaluate forecast accuracy across all 1,488 settlement periods, and size dispatchable thermal backup buffers to hedge against costly Balancing Mechanism cashout penalties.
-
-### 🌐 Live Deployment Links
-- **Frontend Portal (Live on Vercel)**: [https://frontend-woad-six-16.vercel.app/](https://frontend-woad-six-16.vercel.app/)
-- **Backend API & Swagger Docs (Live on Render)**: [https://grid-backend-xee3.onrender.com/docs](https://grid-backend-xee3.onrender.com/docs)
+### 🌐 Live Deployment
+- **Frontend Portal (Vercel)**: [https://frontend-woad-six-16.vercel.app/](https://frontend-woad-six-16.vercel.app/)
+- **Backend API & Swagger Docs (Render)**: [https://grid-backend-xee3.onrender.com/docs](https://grid-backend-xee3.onrender.com/docs)
 - **API Health Check**: [https://grid-backend-xee3.onrender.com/api/health](https://grid-backend-xee3.onrender.com/api/health)
 
+---
+
+## The Problem: Why Forecast Accuracy Matters
+
+In the UK Day-Ahead power market (EPEX SPOT / Nord Pool), suppliers and trading desks must lock in their power procurement orders by **11:00 UTC on Day D-1** (the day before actual delivery).
+
+Because wind power fluctuates with the weather, trading desks need accurate forecasts to determine how much dispatchable thermal backup (such as gas-fired CCGT) they need to buy. If the wind underdelivers, the utility is left short and must pay steep cashout penalties to National Grid ESO under the Balancing Mechanism.
+
+### Key Market Findings (January 2026)
+
+Analyzing all 1,488 settlement periods in January 2026 revealed a clear, systematic trend:
+
+- **Consistent Overforecasting (+1,839.5 MW average bias)**: Day-ahead forecasts overpromised generation in nearly **78%** of all half-hour settlement periods.
+- **Average Forecast Miss (MAE: 2,108.5 MW)**: An average deviation of ~11.8% relative to total national wind capacity.
+- **Storm Shock Sensitivity (RMSE: 2,611.2 MW | MAPE: 21.9%)**: Rapid cold fronts and storm transitions triggered large forecast swings, creating severe sudden deficits.
+- **The Trading Implication**: Bidding 1:1 on raw day-ahead forecasts without a risk buffer exposes a desk to repeated cashout penalties. A data-backed thermal buffer is essential to protect trading margins.
 
 ---
 
-## 1. Executive Summary & Market Findings
+## Core Features
 
-UK energy utilities must procure power on Day D-1 before the Day-Ahead auction cutoff (typically **11:00 UTC**). Renewable wind is intermittent and non-dispatchable; utilities must forecast wind delivery to calculate their residual demand for dispatchable thermal generation (CCGT/peakers).
+### 1. Day-Ahead Decision View
+- Select any delivery date in January 2026 and adjust the gate closure cutoff hour (defaulting to 11:00 UTC on D-1).
+- Visualizes the published day-ahead forecast against actual metered generation.
+- Enforces strict gate closure filtering—only forecasts published before the cutoff are used, completely avoiding look-ahead bias.
 
-Evaluating the **1,488 half-hour settlement periods** of **January 2026** revealed a critical domain reality:
+### 2. Quantitative Error Analytics
+- **Error Distribution Histogram**: Displays the spread of forecast misses with empirical P10, P50, and P90 percentiles.
+- **Diurnal Error Profile**: Breaks down average error across the 48 daily settlement periods (00:00 to 23:30) to pinpoint intraday ramp biases (e.g., morning pickup vs. evening peak).
+- **Daily Trend Tracker**: Pinpoints high-volatility storm days throughout January to assess extreme weather performance.
 
-- **Mean Absolute Error (MAE)**: **2,108.5 MW** (11.8% of national wind capacity)
-- **Root Mean Square Error (RMSE)**: **2,611.2 MW** (heavily penalizes storm-driven forecast collapses)
-- **Mean Absolute Percentage Error (MAPE)**: **21.94%**
-- **Directional Bias (Mean Bias Error)**: **+1,839.5 MW** (systematic national overforecasting)
-
-> **Key Commercial Insight**: National wind forecasts consistently overpredict actual generation by nearly **1.84 GW** on average. A wholesale trading desk bidding 1:1 against wind forecasts without a quantitative thermal buffer would end up structurally short in **78% of settlement periods**, paying steep National Grid Balancing Mechanism (BM) System Buy Price cashout penalties.
+### 3. Thermal Risk Buffer Calculator
+- Interactive risk tolerance selector (P50, P80, P90, P95 confidence levels).
+- Calculates the exact recommended backup thermal volume (in MW) to procure.
+- Estimates potential Balancing Mechanism cashout penalty savings based on historical shortfall spreads.
 
 ---
 
-## 2. Platform Architecture
+## System Architecture
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        DATA PIPELINE (Backend)                         │
-│                                                                        │
-│   Elexon BMRS Stream API                                              │
-│   ├── FUELHH (Half-hourly metered generation: WIND)                    │
-│   └── WINDFOR (Batched wind forecast stream)                           │
-│                                                                        │
-│   Data Store & Gate Closure Engine (Python / Pandas / FastAPI)         │
-│   ├── Filter publish_time <= 11:00 UTC (D-1) (Zero Look-Ahead Bias)    │
-│   ├── Linear Interpolation for 48 half-hour settlement periods        │
-│   └── In-Memory Store: 1,490 actuals & 19,272 forecast records (<10ms) │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │ JSON REST API
-┌───────────────────────────────────▼────────────────────────────────────┐
-│                        FRONTEND PORTAL (React 19)                      │
-│                                                                        │
-│   1. Day-Ahead Decision View                                           │
-│      • Bklit Time-Series Area Chart (Forecast vs Actual Generation)   │
-│      • Real-time Cutoff Hour & Delivery Date Picker                    │
-│      • Dispatchable Thermal Buy Order Calculator                      │
-│                                                                        │
-│   2. Quantitative Error Analytics                                      │
-│      • Bklit Error Distribution Histogram (P10, P50, P90 percentiles)   │
-│      • Bklit Diurnal Error Profile (48 settlement periods, 00:00-23:30)│
-│      • January 1-31 Daily Error Trend & Storm Volatility Peak Days    │
-│                                                                        │
-│   3. Thermal Risk Buffer Tool                                          │
-│      • P50 / P80 / P90 / P95 Confidence Level Selection                │
-│      • Quantified Step-by-Step Thermal Procurement Recommendation      │
-│      • Balancing Mechanism Penalty Avoidance Estimator (£k saved)      │
-└────────────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│                      DATA INGESTION                    │
+│  Elexon BMRS API Streams:                              │
+│  • FUELHH  -> Half-hourly metered actual wind output   │
+│  • WINDFOR -> Batched wind forecast updates            │
+└───────────────────────────┬────────────────────────────┘
+                            │
+┌───────────────────────────▼────────────────────────────┐
+│                    BACKEND (FastAPI)                   │
+│  • Gate-closure filter (publish_time <= D-1 11:00 UTC) │
+│  • Linear interpolation to 48 settlement periods       │
+│  • High-speed in-memory store (<10ms response times)   │
+│  • Statistical error engine (MAE, RMSE, MAPE, MBE)     │
+└───────────────────────────┬────────────────────────────┘
+                            │ REST API
+┌───────────────────────────▼────────────────────────────┐
+│                   FRONTEND (React 19)                  │
+│  • Day-Ahead Forecast vs Actual View                   │
+│  • Quantitative Analytics & Diurnal Profile            │
+│  • Thermal Risk Buffer Sizing Tool                     │
+│  • Bklit interactive time-series & bar charts          │
+└────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 3. Directory & File Map
+## Project Structure
 
 ```
 gridassign/
 ├── backend/
 │   ├── api/
-│   │   ├── routes_forecast.py       # Day-Ahead schedule endpoint
-│   │   └── routes_analytics.py      # Monthly summary & daily breakdown endpoints
+│   │   ├── routes_forecast.py       # Day-ahead schedule endpoint
+│   │   └── routes_analytics.py      # Monthly summary & daily metrics
 │   ├── data/
-│   │   └── raw/                     # Cached Elexon BMRS JSON streams (Jan 2026)
-│   │       ├── FUELHH_actuals_jan2026.json
-│   │       └── WINDFOR_forecasts_jan2026.json
+│   │   └── raw/                     # Cached Elexon BMRS streams (Jan 2026)
 │   ├── models/
-│   │   └── schemas.py               # Pydantic v2 request/response schemas
+│   │   └── schemas.py               # Pydantic v2 schemas
 │   ├── services/
-│   │   ├── elexon_client.py         # Resilient Elexon API client (rate limits/retries)
-│   │   ├── data_pipeline.py         # Gate-closure matching & in-memory pandas store
-│   │   └── error_metrics.py         # Quantitative statistical engine (MAE, RMSE, MAPE, MBE)
-│   ├── Dockerfile                   # Python 3.11-slim container
-│   ├── main.py                      # FastAPI app entry point & CORS configuration
-│   ├── Procfile                     # Heroku / Render deployment specification
+│   │   ├── elexon_client.py         # Resilient Elexon API client
+│   │   ├── data_pipeline.py         # Gate-closure matching & data caching
+│   │   └── error_metrics.py         # Statistical calculations
+│   ├── main.py                      # FastAPI app entry point & CORS
 │   ├── requirements.txt             # Python dependencies
-│   ├── runtime.txt                  # Python runtime specification (3.11.8)
-│   └── verify_core.py               # Automated verification script
+│   ├── Dockerfile                   # Python container configuration
+│   └── verify_core.py               # Test & validation script
 │
 ├── frontend/
 │   ├── src/
-│   │   ├── api/
-│   │   │   ├── client.ts            # Typed HTTP client with environment resolution
-│   │   │   └── types.ts             # TypeScript interfaces matching backend models
+│   │   ├── api/                     # Typed client & API definitions
 │   │   ├── components/
-│   │   │   ├── analytics/
-│   │   │   │   └── QuantitativeErrorView.tsx # Histograms & diurnal curves
-│   │   │   ├── charts/              # Third-party: Bklit UI charting primitives (not our own, https://bklit.com)
-│   │   │   │   ├── area-chart.tsx
-│   │   │   │   ├── bar-chart.tsx
-│   │   │   │   ├── line-chart.tsx
-│   │   │   │   └── ...
-│   │   │   ├── decision/
-│   │   │   │   └── ThermalRiskBufferView.tsx # Empirical risk sizing tool
-│   │   │   ├── forecast/
-│   │   │   │   └── DayAheadView.tsx # Day D-1 forecast vs actuals Bklit view
-│   │   │   └── layout/
-│   │   │       └── Sidebar.tsx      # Collapsible & expandable trading desk sidebar navigation
-│   │   ├── App.tsx                  # Main 3-tab portal layout & navigation
-│   │   ├── index.css                # Design tokens & color system
-│   │   └── main.tsx                 # React DOM root mounting
-│   ├── Dockerfile                   # Multi-stage build (Node 20 -> Nginx alpine)
-│   ├── nginx.conf                   # Nginx reverse proxy & SPA fallback
-│   ├── package.json                 # React 19, Bklit, Visx, Motion, Tailwind
-│   ├── tsconfig.json                # Strict TypeScript configuration
-│   └── vercel.json                  # Vercel SPA routing rewrites
+│   │   │   ├── analytics/           # Error distributions & diurnal views
+│   │   │   ├── charts/              # Bklit UI charting primitives
+│   │   │   ├── decision/            # Thermal risk buffer calculator
+│   │   │   ├── forecast/            # Day D-1 forecast comparison view
+│   │   │   └── layout/              # Sidebar navigation & shell
+│   │   ├── App.tsx                  # Main application container
+│   │   └── index.css                # Styling & color tokens
+│   ├── package.json                 # Dependencies (React 19, Vite, Tailwind)
+│   ├── Dockerfile                   # Nginx production build
+│   └── vercel.json                  # SPA routing configuration
 │
-├── docker-compose.yml               # 1-command container orchestration
-├── PROJECT_BLUEPRINT.md             # Complete technical architecture specification
-├── DEMO_SCRIPT.md                   # 10-minute video presentation script
-└── README.md                        # Documentation
+└── docker-compose.yml               # Multi-container orchestration
 ```
 
 ---
 
-## 4. How to Start the Application
+## Getting Started
 
-### Option A: Using Docker (Recommended)
+### Option 1: Docker (Fastest)
 
-Run both the FastAPI backend and React frontend with a single command:
+Run both backend and frontend containers with one command:
 
 ```bash
 docker compose up --build
 ```
 
-- **Frontend Portal**: `http://localhost:3000`
-- **Backend API & Swagger Docs**: `http://localhost:8000/docs`
-- **Health Check**: `http://localhost:8000/api/health`
+- **Frontend**: [http://localhost:3000](http://localhost:3000)
+- **Backend API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Health Check**: [http://localhost:8000/api/health](http://localhost:8000/api/health)
 
 ---
 
-### Option B: Running Locally Without Docker
+### Option 2: Run Locally
 
-#### 1. Start the Backend (Python 3.11+)
+#### 1. Backend Setup (Python 3.11+)
 
 ```bash
 cd backend
 python -m venv venv
 
-# On Windows:
+# Activate venv:
+# Windows:
 .\venv\Scripts\activate
-# On Linux/macOS:
+# Linux/macOS:
 source venv/bin/activate
 
 pip install -r requirements.txt
 python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-#### 2. Start the Frontend (Node.js 18+)
+#### 2. Frontend Setup (Node.js 18+)
 
 ```bash
 cd frontend
@@ -167,62 +157,42 @@ npm install --legacy-peer-deps
 npm run dev
 ```
 
-Open your browser at `http://localhost:5173`.
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ---
 
-## 5. Mathematical Formulations & Methodology
+## Statistical Methodology
 
-### Gate Closure & Look-Ahead Bias Prevention
-In the UK EPEX SPOT Day-Ahead Auction, order books close at **11:00 UTC on Day D-1**. The platform enforces this gate closure:
-$$\text{PublishTime} \le \text{DeliveryDate}_{D-1} \text{ 11:00:00 UTC}$$
-Only forecasts published prior to this timestamp are admitted.
+To measure forecast accuracy without distorting real-world trading conditions:
 
-### Quantitative Error Metrics
-For settlement periods $i = 1, \dots, N$:
-
-1. **Mean Absolute Error (MAE)**:
+1. **Gate Closure Enforcement**: Only forecasts published strictly before the cutoff timestamp ($\text{PublishTime} \le \text{DeliveryDate}_{D-1} \text{ 11:00 UTC}$) are considered.
+2. **Mean Absolute Error (MAE)**: Measures average absolute miss in MW, giving a clear baseline expectation.
    $$\text{MAE} = \frac{1}{N} \sum_{i=1}^{N} \left| F_i - A_i \right|$$
-
-2. **Root Mean Square Error (RMSE)**:
+3. **Root Mean Square Error (RMSE)**: Penalizes large, sudden forecast errors more heavily than small ones—critical during storm disruptions.
    $$\text{RMSE} = \sqrt{\frac{1}{N} \sum_{i=1}^{N} (F_i - A_i)^2}$$
-
-3. **Mean Absolute Percentage Error (MAPE)**:
+4. **Mean Absolute Percentage Error (MAPE)**: Normalized percentage error relative to actual delivered generation.
    $$\text{MAPE} = \frac{100\%}{N_{\text{active}}} \sum_{A_i > 0} \frac{\left| F_i - A_i \right|}{A_i}$$
-
-4. **Mean Bias Error (MBE / Directional Bias)**:
+5. **Directional Bias (Mean Bias Error)**: Identifies whether forecasts systematically overpredict ($>0$) or underpredict ($<0$).
    $$\text{MBE} = \frac{1}{N} \sum_{i=1}^{N} (F_i - A_i)$$
 
 ---
 
-## 6. Deployment Guide
- 
-- **Frontend Portal (Vercel)**: [https://frontend-woad-six-16.vercel.app/](https://frontend-woad-six-16.vercel.app/)
-  - Deployed from `frontend/` directory with Vite preset.
-  - Automatically proxies API requests to Render via `VITE_API_URL` environment variable.
+## AI Usage Disclosure
 
-- **Backend API (Render)**: [https://grid-backend-xee3.onrender.com](https://grid-backend-xee3.onrender.com)
-  - Deployed from `backend/` using Docker container with automatic health monitoring.
-  - Interactive Swagger Docs: [https://grid-backend-xee3.onrender.com/docs](https://grid-backend-xee3.onrender.com/docs)
+As specified in the project brief, this platform was developed using **Google Antigravity AI** as an active pair-programming partner. 
 
+AI was used iteratively to write, test, and refine code across the full stack:
+- **Backend & Data Pipeline**: Co-authoring FastAPI endpoints, Pydantic schemas, and pandas processing pipelines to ingest Elexon BMRS streams (`FUELHH` and `WINDFOR`) while strictly enforcing gate closure.
+- **Statistical Engine**: Writing and verifying the vectorized math for MAE, RMSE, MAPE, Mean Bias Error (MBE), and empirical quantiles in `services/error_metrics.py`.
+- **Frontend & Visualizations**: Building React 19 / TypeScript components, managing reactive view states, and wiring live API data into Bklit UI charting primitives.
+- **DevOps & Verification**: Authoring multi-stage Dockerfiles, Docker Compose setups, and verification scripts (`verify_core.py`).
 
----
-
-## 7. AI Tools Disclosure
-
-As requested in the project brief, this application was built with the assistance of Google Antigravity AI, utilizing:
-- Data pipeline engineering for Elexon BMRS API integration and look-ahead bias validation.
-- Quantitative statistical error formulation in Python (Pandas/NumPy).
-- Frontend design and integration using Bklit UI charting libraries (Visx / Motion).
-- Full end-to-end containerization and verification.
+All system architecture, market rules, verification testing, and UI decisions were driven and reviewed by the engineer.
 
 ---
 
-## 8. Third-Party Attributions & Open Source Acknowledgments
+## Attributions & Open Source Acknowledgments
 
-### Bklit UI Chart Library (`frontend/src/components/charts/`)
-- **Origin**: [Bklit UI](https://bklit.com) | [Documentation & Components](https://bklit.com/docs/installation)
-- **Directory**: [`frontend/src/components/charts/`](file:///d:/gridassign/frontend/src/components/charts)
-- **Attribution Notice**: The components in the `frontend/src/components/charts/` directory (including `time-series-chart-shell.tsx`, `area-chart.tsx`, `bar-chart.tsx`, `line-chart.tsx`, axis scalers, pattern generators, and tooltip animations) are sourced directly from the **Bklit UI** open-source component collection (built on top of `@visx` and `motion`).
-- **Originality Clarification**: These chart components are **not our own creation**. They were imported from Bklit to serve as high-performance SVG/canvas visualization primitives, which we configured, styled, and wired to our Elexon BMRS energy forecasting backend data feeds. All credit for the underlying chart architecture goes to the authors and maintainers of Bklit UI.
+- **Bklit UI Chart Primitives** ([bklit.com](https://bklit.com)): The charting components in `frontend/src/components/charts/` are sourced from Bklit UI (built with `@visx` and `motion`). They were imported as foundational visualization components and wired to our backend API endpoints.
+- **Grid Data**: Sourced from official Elexon BMRS / National Grid ESO APIs (`FUELHH` and `WINDFOR`).
 
