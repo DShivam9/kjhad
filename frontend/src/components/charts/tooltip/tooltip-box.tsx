@@ -78,7 +78,7 @@ export interface TooltipBoxProps {
  * tokens (`border`, `--radius`) and Tailwind utilities.
  */
 export const TOOLTIP_PANEL_CLASS_NAME =
-  "relative min-w-[160px] rounded-xl border not-dark:bg-clip-padding text-chart-tooltip-foreground shadow-lg/5 before:pointer-events-none before:absolute before:inset-0 before:rounded-[calc(var(--radius-xl)-1px)] before:shadow-[0_1px_rgb(0_0_0/0.04)] dark:before:shadow-[0_-1px_rgb(255_255_255/0.06)]";
+  "relative min-w-[160px] rounded-xl border not-dark:bg-clip-padding text-chart-tooltip-foreground shadow-lg/5";
 
 /** Clips content to the panel's inner radius without clipping the edge highlight. */
 export const TOOLTIP_PANEL_INNER_CLASS_NAME =
@@ -164,7 +164,7 @@ function TooltipBoxInner({
   animate = true,
   entrance = true,
   exit: _exit,
-  replayOnFlip = true,
+  replayOnFlip = false,
   panelStyle,
   backgroundColor = chartCssVars.tooltipBackground,
   container,
@@ -279,14 +279,15 @@ function TooltipBoxInner({
     TOOLTIP_PANEL_CLASS_NAME,
     panelStyle?.backgroundColor === undefined &&
       backgroundColor === chartCssVars.tooltipBackground &&
-      "bg-chart-tooltip-background",
+      "bg-white/80 dark:bg-[#141417]/80",
     panelStyle?.backdropFilter === undefined && "backdrop-blur-md"
   );
   const panelStyleResolved = {
     transformOrigin,
-    ...(panelStyle?.backgroundColor === undefined && {
-      backgroundColor,
-    }),
+    ...(panelStyle?.backgroundColor === undefined &&
+      backgroundColor !== chartCssVars.tooltipBackground && {
+        backgroundColor,
+      }),
     ...panelStyle,
   };
 
@@ -308,11 +309,11 @@ function TooltipBoxInner({
   return createPortal(
     <motion.div
       animate={{ opacity: 1 }}
-      className={cn("pointer-events-none absolute z-50", className)}
+      className={cn("pointer-events-none absolute left-0 top-0 z-50 will-change-transform", className)}
       exit={{ opacity: 0 }}
       initial={{ opacity: 0 }}
       ref={tooltipRef}
-      style={{ left: finalLeft, top: finalTop }}
+      style={{ x: finalLeft, y: finalTop }}
       transition={{ duration: 0.1 }}
     >
       <motion.div
@@ -321,11 +322,11 @@ function TooltipBoxInner({
         initial={
           reducedMotion
             ? { opacity: 0 }
-            : { scale: 0.85, opacity: 0, x: isFlipped ? 20 : -20 }
+            : { scale: 0.94, opacity: 0, x: isFlipped ? 10 : -10 }
         }
         key={flipKey}
         style={panelStyleResolved}
-        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        transition={{ type: "spring", duration: 0.22, bounce: 0 }}
       >
         <div className={TOOLTIP_PANEL_INNER_CLASS_NAME}>{children}</div>
       </motion.div>

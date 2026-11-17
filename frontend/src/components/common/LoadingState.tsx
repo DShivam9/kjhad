@@ -1,3 +1,5 @@
+import { motion } from "motion/react"
+
 interface LoadingStateProps {
   title: string
   description: string
@@ -7,36 +9,49 @@ interface LoadingStateProps {
 export function LoadingState({
   title,
   description,
-  subtext = "Elexon BMRS Stream • 48 Periods / Day • Zero Look-Ahead Bias",
+  subtext = "Elexon BMRS · 48 Periods · Zero Look-Ahead Bias",
 }: LoadingStateProps) {
   return (
-    <div className="flex min-h-[72vh] w-full items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-8 text-center shadow-sm dark:border-zinc-800 dark:bg-[#18181b] space-y-4">
-        {/* Sleek Neutral Spinner */}
-        <div className="relative mx-auto flex h-10 w-10 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-900 dark:border-zinc-800 dark:border-t-zinc-200" />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+      className="space-y-8 py-2"
+    >
+      {/* Minimal unboxed status header */}
+      <div className="flex flex-col items-start justify-between gap-2 border-b border-zinc-200/70 pb-5 sm:flex-row sm:items-center dark:border-white/[0.07]">
+        <div className="flex items-center space-x-3">
+          <div
+            aria-hidden="true"
+            className="h-4 w-4 animate-spin rounded-full border-[1.5px] border-zinc-300 border-t-zinc-900 dark:border-white/15 dark:border-t-zinc-100"
+          />
+          <div>
+            <h2 className="text-sm font-medium tracking-tight text-zinc-900 dark:text-zinc-100">
+              {title}
+            </h2>
+            <p className="text-xs text-zinc-500 mt-0.5">{description}</p>
+          </div>
         </div>
 
-        {/* Text Content */}
-        <div className="space-y-1.5">
-          <h3 className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-            {title}
-          </h3>
-          <p className="text-xs text-zinc-500 leading-relaxed">
-            {description}
-          </p>
-        </div>
-
-        {/* Sleek Indeterminate Progress Bar */}
-        <div className="mx-auto h-1 w-48 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800/80">
-          <div className="h-full w-1/2 animate-pulse rounded-full bg-zinc-700 dark:bg-zinc-300" />
-        </div>
-
-        {/* Technical Subtext */}
-        <p className="pt-2 font-mono text-[10px] text-zinc-400 dark:text-zinc-500 border-t border-zinc-100 dark:border-zinc-800/60">
+        <span className="font-mono text-[10px] tracking-wide text-zinc-400 dark:text-zinc-500">
           {subtext}
-        </p>
+        </span>
       </div>
-    </div>
+
+      {/* Quiet spatial skeleton matching the dashboard layout */}
+      <div className="glass-surface rounded-2xl p-5 grid grid-cols-2 gap-6 sm:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="space-y-2.5">
+            <div className="h-3 w-20 animate-pulse rounded bg-zinc-200/70 dark:bg-white/[0.06]" />
+            <div className="h-7 w-28 animate-pulse rounded bg-zinc-200/90 dark:bg-white/[0.08]" />
+            <div className="h-2.5 w-24 animate-pulse rounded bg-zinc-200/50 dark:bg-white/[0.04]" />
+          </div>
+        ))}
+      </div>
+
+      <div className="glass-surface rounded-2xl p-5">
+        <div className="h-[340px] w-full animate-pulse rounded-xl bg-zinc-200/40 dark:bg-white/[0.025]" />
+      </div>
+    </motion.div>
   )
 }
