@@ -137,13 +137,6 @@ class MarketDataStore:
             & (self.forecasts_df["publish_time"] <= gate_closure)
         ].copy()
 
-        # Fallback in case a specific day had an earlier forecast cutoff
-        if candidate_forecasts.empty:
-            candidate_forecasts = self.forecasts_df[
-                (self.forecasts_df["start_time"] >= day_start)
-                & (self.forecasts_df["start_time"] < day_end)
-            ].copy()
-
         # Select the latest forecast per delivery period published before cutoff
         latest_forecasts = candidate_forecasts.sort_values("publish_time").groupby("start_time").last().reset_index()
 

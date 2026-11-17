@@ -16,6 +16,7 @@ venv/
 ENV/
 .venv/
 .pytest_cache/
+.coverage
 
 # OS / IDE
 .DS_Store

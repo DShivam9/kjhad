@@ -90,6 +90,10 @@ gridassign/
 │   │   ├── elexon_client.py         # Resilient Elexon API client
 │   │   ├── data_pipeline.py         # Gate-closure matching & data caching
 │   │   └── error_metrics.py         # Statistical calculations
+│   ├── tests/
+│   │   ├── test_api_routes.py       # FastAPI endpoint & validation tests
+│   │   ├── test_data_pipeline.py    # Gate-closure & interpolation tests
+│   │   └── test_error_metrics.py    # Statistical metric unit tests
 │   ├── main.py                      # FastAPI app entry point & CORS
 │   ├── requirements.txt             # Python dependencies
 │   ├── Dockerfile                   # Python container configuration
@@ -158,6 +162,34 @@ npm run dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+---
+
+## Testing & Verification
+
+The backend is verified with an isolated `pytest` suite (`25` tests) covering statistical accuracy, market gate-closure rules, and API contracts. All external Elexon BMRS network calls are mocked, using deterministic fixtures and local cached data in `backend/data/raw/`.
+
+### Running Tests
+
+From the project root (`gridassign/`):
+
+```bash
+# Run the full test suite
+pytest backend/tests
+
+# Run with line-by-line coverage report
+pytest backend/tests --cov=backend --cov-report=term-missing
+```
+
+### Suite Breakdown & Coverage
+
+Latest run: **25 passed** (`82%` overall backend coverage).
+
+| Test File | Tests | Target Modules | Coverage | What It Verifies |
+|---|---:|---|---:|---|
+| `test_error_metrics.py` | 6 | `services/error_metrics.py` | 81% | Hand-calculated MAE, RMSE, MAPE, and MBE; empty input, single period, zero-actual MAPE exclusion, and exact-match forecasts |
+| `test_data_pipeline.py` | 6 | `services/data_pipeline.py` | 77% | Strict `D-1 11:00 UTC` gate-closure cutoff (excluding post-cutoff releases and preventing fallback look-ahead leaks), linear interpolation across 48 half-hour periods, and offline cache loading |
+| `test_api_routes.py` | 13 | `api/routes_forecast.py`<br>`api/routes_analytics.py`<br>`models/schemas.py`<br>`main.py` | 100%<br>93%<br>100%<br>91% | `TestClient` checks for `/api/health`, 200 response shapes, 422 validation on out-of-range dates/cutoffs, and 404 handling on missing data |
 
 ---
 
